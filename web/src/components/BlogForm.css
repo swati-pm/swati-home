@@ -1,0 +1,28 @@
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.btn-danger {
+  background: none;
+  border: 1.5px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: var(--color-danger);
+  color: #ffffff;
+}

@@ -1,0 +1,36 @@
+services:
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        VITE_ADMIN_EMAIL: ${ADMIN_EMAIL}
+        VITE_API_BASE: ${VITE_API_BASE:-/api}
+        VITE_SITE_NAME: ${VITE_SITE_NAME:-Swati Aggarwal}
+        VITE_SITE_FIRST_NAME: ${VITE_SITE_FIRST_NAME:-Swati}
+        VITE_SESSION_KEY: ${VITE_SESSION_KEY:-swati-home-auth}
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

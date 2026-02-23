@@ -1,0 +1,121 @@
+[
+  {
+    "id": "1",
+    "company": "bunny.net",
+    "role": "Product Department Lead",
+    "location": "London, UK",
+    "startDate": "Jan 2025",
+    "endDate": "Present",
+    "bullets": [
+      "Lead and coach 5 PMs across 6 squads, setting operating cadence (OKRs, decision reviews, launch readiness) and improving delivery predictability and roadmap hit-rate (~80%).",
+      "Define multi-year strategy across ingestion, real-time processing, storage, observability, and analytics\u2014aligning platform investments to customer outcomes and commercial growth.",
+      "Set EU-focused AI infrastructure strategy, designing an open-router architecture with multi-model routing, MCP server enablement, and LLM governance controls (data residency, policy enforcement, audit logging) to support compliant, scalable AI adoption.",
+      "Partner with the Head of AI and engineering leadership to ship AI governance and safety capabilities (guardrails, cost controls, policy controls), translating complex systems into clear business value.",
+      "Build and iterate vector search and relevance systems, improving discoverability and user success (reduced zero-result queries; increased CTR through indexing, taxonomy, and analytics-driven tuning).",
+      "Standardise hypothesis-driven discovery and measurement (success metrics, controlled rollouts, post-launch learnings), accelerating iteration speed while maintaining reliability guardrails (p95 latency targets)."
+    ]
+  },
+  {
+    "id": "2",
+    "company": "Tray.ai",
+    "role": "Principal Product Manager \u2013 AI, Data Governance & Workflow Automation",
+    "location": "London, UK",
+    "startDate": "Feb 2023",
+    "endDate": "Dec 2024",
+    "bullets": [
+      "Led a multi-discipline PM organisation across the AI automation suite; set roadmap strategy, operating cadence, and portfolio investment trade-offs.",
+      "Defined and executed GenAI roadmap for agent-driven orchestration and service automation, delivering +30% engagement and +10% revenue uplift.",
+      "Shipped AI-powered classification and response systems, reducing operational processing time by 50%.",
+      "Built reusable data ingestion, governance, and consent primitives (audit logs, access controls, policy gates) enabling privacy-safe enterprise data activation.",
+      "Institutionalised responsible AI standards across workflows (PII handling, auditability, approval gates).",
+      "Introduced analytics instrumentation and experimentation frameworks, increasing governance feature adoption by 40%.",
+      "Partnered with GTM and Finance to define AI pricing and packaging strategy supporting expansion and cross-sell.",
+      "Presented AI vision and platform roadmap to enterprise customers and executive stakeholders."
+    ]
+  },
+  {
+    "id": "3",
+    "company": "Tessian",
+    "role": "Group Product Manager \u2013 AI Risk & Behavioural Data Platforms",
+    "location": "London, UK",
+    "startDate": "Mar 2022",
+    "endDate": "Jan 2023",
+    "bullets": [
+      "Led AI product roadmap spanning model-backed features, feedback loops, and workflow integration; improved trust via explainability and outcome visibility.",
+      "Established KPI discipline for model performance and user impact; partnered with Data Science to prioritise research aligned to product outcomes.",
+      "Managed senior PMs and cross-functional squads; improved customer satisfaction through faster iteration and clearer value realisation."
+    ]
+  },
+  {
+    "id": "4",
+    "company": "Mimecast",
+    "role": "Senior Product Manager",
+    "location": "London, UK",
+    "startDate": "Sep 2018",
+    "endDate": "Mar 2022",
+    "bullets": [
+      "Delivered ML-backed anomaly detection and event processing systems at enterprise scale.",
+      "Introduced NLP-based analytics improving detection accuracy by 20%.",
+      "Reduced MTTR from days to under 30 minutes through automation and workflow intelligence.",
+      "Contributed to \u00a312M ARR portfolio growth through roadmap strategy and expansion initiatives.",
+      "Developed PM talent and cross-functional execution standards."
+    ]
+  },
+  {
+    "id": "5",
+    "company": "Disney Star TV",
+    "role": "Product and Strategy Manager",
+    "location": "London, UK",
+    "startDate": "Mar 2017",
+    "endDate": "Dec 2017",
+    "bullets": [
+      "Defined audience analytics strategy and behavioural segmentation for international VOD.",
+      "Launched platform driving +20% international revenue through data-informed discovery and monetisation.",
+      "Managed 5 product & data analysts; defined personas, journeys, and 3-year roadmap."
+    ]
+  },
+  {
+    "id": "6",
+    "company": "Emtec",
+    "role": "Lead Product Owner",
+    "location": "",
+    "startDate": "Jun 2008",
+    "endDate": "Aug 2015",
+    "bullets": [
+      "Delivered B2B healthcare web platform (+20% revenue); translated complex user workflows into scalable solutions."
+    ]
+  },
+  {
+    "id": "7",
+    "company": "Oracle",
+    "role": "Product Owner",
+    "location": "",
+    "startDate": "",
+    "endDate": "",
+    "bullets": [
+      "Built customer segmentation models informing pricing and positioning decisions."
+    ]
+  },
+  {
+    "id": "8",
+    "company": "Deloitte",
+    "role": "Technical Consultant",
+    "location": "",
+    "startDate": "",
+    "endDate": "",
+    "bullets": [
+      "Delivered reusable analytics solution used to win $100M enterprise deal."
+    ]
+  },
+  {
+    "id": "9",
+    "company": "Infosys",
+    "role": "Technical Consultant",
+    "location": "",
+    "startDate": "",
+    "endDate": "",
+    "bullets": [
+      "Employee of the Year; built BI platform increasing tax collection by 20%."
+    ]
+  }
+]

@@ -1,0 +1,124 @@
+.exp-card {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--color-primary);
+  padding: 28px 28px 24px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.exp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.exp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.exp-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.exp-card-company {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.exp-card-role {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.exp-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.exp-card-date::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.exp-card-location::before {
+  content: '\1F4CD';
+  margin-right: 4px;
+  font-size: 0.8rem;
+}
+
+.exp-card-edit {
+  background: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.exp-card-edit:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-glow);
+}
+
+.exp-card-bullets {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exp-card-bullets li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 0.925rem;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.exp-card-bullets li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent);
+  border-radius: 50%;
+}
+
+@media (max-width: 640px) {
+  .exp-card {
+    padding: 20px 18px;
+  }
+
+  .exp-card-header {
+    flex-direction: column;
+  }
+
+  .exp-card-edit {
+    align-self: flex-start;
+  }
+}
