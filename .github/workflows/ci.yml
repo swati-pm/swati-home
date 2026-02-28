@@ -146,24 +146,24 @@ jobs:
             ghcr.io/swati-pm/swati-home/server:latest
 
   # ── Deploy to Bunny Magic Containers ────────────────
-  # deploy:
-  #   name: Deploy to Bunny Magic Containers
-  #   runs-on: ubuntu-latest
-  #   needs: build-images
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #   steps:
-  #     - name: Deploy frontend container
-  #       uses: BunnyWay/actions/container-update-image@main
-  #       with:
-  #         app_id: ${{ secrets.BUNNYNET_APP_ID }}
-  #         api_key: ${{ secrets.BUNNYNET_API_KEY }}
-  #         container: frontend
-  #         image_tag: ${{ github.sha }}
+  deploy:
+    name: Deploy to Bunny Magic Containers
+    runs-on: ubuntu-latest
+    needs: build-images
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy frontend container
+        uses: BunnyWay/actions/container-update-image@main
+        with:
+          app_id: ${{ secrets.BUNNYNET_APP_ID }}
+          api_key: ${{ secrets.BUNNYNET_API_KEY }}
+          container: frontend
+          image_tag: ${{ github.sha }}
 
-  #     - name: Deploy server container
-  #       uses: BunnyWay/actions/container-update-image@main
-  #       with:
-  #         app_id: ${{ secrets.BUNNYNET_APP_ID }}
-  #         api_key: ${{ secrets.BUNNYNET_API_KEY }}
-  #         container: server
-  #         image_tag: ${{ github.sha }}
+      - name: Deploy server container
+        uses: BunnyWay/actions/container-update-image@main
+        with:
+          app_id: ${{ secrets.BUNNYNET_APP_ID }}
+          api_key: ${{ secrets.BUNNYNET_API_KEY }}
+          container: server
+          image_tag: ${{ github.sha }}
