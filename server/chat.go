@@ -140,7 +140,7 @@ type openaiResponse struct {
 	} `json:"error,omitempty"`
 }
 
-func chatHandler(openaiKey, systemPrompt string, limiter *rateLimiter) http.HandlerFunc {
+func chatHandler(openaiKey, openaiBaseURL, systemPrompt string, limiter *rateLimiter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Rate limit
 		if !limiter.allow(getClientIP(r)) {
@@ -196,7 +196,7 @@ func chatHandler(openaiKey, systemPrompt string, limiter *rateLimiter) http.Hand
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewReader(body))
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, openaiBaseURL+"/chat/completions", bytes.NewReader(body))
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "failed to create request")
 			return
