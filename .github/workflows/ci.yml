@@ -157,7 +157,7 @@ jobs:
         with:
           app_id: ${{ secrets.BUNNYNET_APP_ID }}
           api_key: ${{ secrets.BUNNYNET_API_KEY }}
-          container: frontend
+          container: swati-home-frontend
           image_tag: ${{ github.sha }}
 
       - name: Deploy server container
@@ -165,5 +165,5 @@ jobs:
         with:
           app_id: ${{ secrets.BUNNYNET_APP_ID }}
           api_key: ${{ secrets.BUNNYNET_API_KEY }}
-          container: server
+          container: swati-home-backend
           image_tag: ${{ github.sha }}
