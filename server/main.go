@@ -297,6 +297,11 @@ func main() {
 		log.Println("OPENAI_API_KEY not set; chat endpoint will be disabled")
 	}
 
+	openaiBaseURL := os.Getenv("OPENAI_BASE_URL")
+	if openaiBaseURL == "" {
+		openaiBaseURL = "https://api.openai.com/v1"
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -367,7 +372,7 @@ func main() {
 	// Chat route (public, rate-limited)
 	if openaiKey != "" {
 		limiter := newRateLimiter()
-		mux.HandleFunc("POST /api/chat", chatHandler(openaiKey, systemPrompt, limiter))
+		mux.HandleFunc("POST /api/chat", chatHandler(openaiKey, openaiBaseURL, systemPrompt, limiter))
 		log.Println("Chat endpoint enabled")
 	}
 

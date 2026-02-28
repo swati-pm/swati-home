@@ -1,0 +1,22 @@
+# Test override: adds a mock OpenAI server for E2E tests
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#
+# The mock returns canned chat completion responses so the chat endpoint
+# works without calling the real OpenAI API.
+
+services:
+  mock-openai:
+    build:
+      context: ./mock-openai
+      dockerfile: Dockerfile
+    environment:
+      - PORT=4010
+
+  server:
+    environment:
+      - OPENAI_API_KEY=test-mock-key
+      - OPENAI_BASE_URL=http://mock-openai:4010
+    depends_on:
+      - mongo
+      - mock-openai

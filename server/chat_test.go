@@ -150,7 +150,7 @@ func TestGetClientIP_RemoteAddr(t *testing.T) {
 
 func TestChatHandler_EmptyBody(t *testing.T) {
 	limiter := newRateLimiter()
-	handler := chatHandler("fake-key", "system prompt", limiter)
+	handler := chatHandler("fake-key", "https://api.openai.com", "system prompt", limiter)
 
 	req := httptest.NewRequest("POST", "/api/chat", strings.NewReader("{}"))
 	req.Header.Set("Content-Type", "application/json")
@@ -171,7 +171,7 @@ func TestChatHandler_EmptyBody(t *testing.T) {
 
 func TestChatHandler_InvalidRole(t *testing.T) {
 	limiter := newRateLimiter()
-	handler := chatHandler("fake-key", "system prompt", limiter)
+	handler := chatHandler("fake-key", "https://api.openai.com", "system prompt", limiter)
 
 	payload := chatRequest{
 		Messages: []chatMessage{{Role: "admin", Content: "hello"}},
@@ -191,7 +191,7 @@ func TestChatHandler_InvalidRole(t *testing.T) {
 
 func TestChatHandler_EmptyContent(t *testing.T) {
 	limiter := newRateLimiter()
-	handler := chatHandler("fake-key", "system prompt", limiter)
+	handler := chatHandler("fake-key", "https://api.openai.com", "system prompt", limiter)
 
 	payload := chatRequest{
 		Messages: []chatMessage{{Role: "user", Content: "  "}},
@@ -211,7 +211,7 @@ func TestChatHandler_EmptyContent(t *testing.T) {
 
 func TestChatHandler_InvalidJSON(t *testing.T) {
 	limiter := newRateLimiter()
-	handler := chatHandler("fake-key", "system prompt", limiter)
+	handler := chatHandler("fake-key", "https://api.openai.com", "system prompt", limiter)
 
 	req := httptest.NewRequest("POST", "/api/chat", strings.NewReader("not json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -226,7 +226,7 @@ func TestChatHandler_InvalidJSON(t *testing.T) {
 
 func TestChatHandler_RateLimited(t *testing.T) {
 	limiter := newRateLimiter()
-	handler := chatHandler("fake-key", "system prompt", limiter)
+	handler := chatHandler("fake-key", "https://api.openai.com", "system prompt", limiter)
 
 	// Exhaust rate limit
 	for i := 0; i < 11; i++ {
