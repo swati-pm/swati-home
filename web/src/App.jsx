@@ -5,6 +5,7 @@ import ExperienceSection from './components/ExperienceSection'
 import BlogSection from './components/BlogSection'
 import ContactForm from './components/ContactForm'
 import ContactRequests from './components/ContactRequests'
+import ResumeTemplates from './components/ResumeTemplates'
 import AdminLogin from './components/AdminLogin'
 import { config } from './config'
 import './App.css'
@@ -14,6 +15,7 @@ function getPage() {
   if (hash.startsWith('#/experience')) return 'experience'
   if (hash.startsWith('#/blog')) return 'blog'
   if (hash.startsWith('#/contact-requests')) return 'contact-requests'
+  if (hash.startsWith('#/resumes')) return 'resumes'
   if (hash.startsWith('#/contact')) return 'contact'
   if (hash.startsWith('#/admin')) return 'admin'
   return 'home'
@@ -37,6 +39,7 @@ export default function App() {
         {page === 'blog' && <BlogSection />}
         {page === 'contact' && <ContactForm />}
         {page === 'contact-requests' && <ContactRequests />}
+        {page === 'resumes' && <ResumeTemplates />}
         {page === 'admin' && <AdminLogin />}
       </main>
       <footer className="footer">

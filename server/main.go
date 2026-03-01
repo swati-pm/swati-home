@@ -302,6 +302,16 @@ func main() {
 		openaiBaseURL = "https://api.openai.com/v1"
 	}
 
+	siteName := os.Getenv("SITE_NAME")
+	if siteName == "" {
+		siteName = "Swati Aggarwal"
+	}
+
+	gotenbergURL := os.Getenv("GOTENBERG_URL")
+	if gotenbergURL == "" {
+		gotenbergURL = "http://gotenberg:3000"
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -318,6 +328,7 @@ func main() {
 	expCol := db.Collection("experiences")
 	blogCol := db.Collection("blogs")
 	contactCol := db.Collection("contacts")
+	settingsCol := db.Collection("settings")
 
 	seedData(ctx, expCol, blogCol)
 
@@ -368,6 +379,16 @@ func main() {
 	mux.HandleFunc("POST /api/contacts", createContact(contactCol))
 	mux.HandleFunc("GET /api/contacts", auth(listContacts(contactCol)))
 	mux.HandleFunc("DELETE /api/contacts/{id}", auth(deleteContact(contactCol)))
+
+	// Resume routes (all admin-only)
+	profile := profileData{
+		Name:    siteName,
+		Email:   adminEmail,
+		Summary: "Product leader with 15+ years building data and AI-powered platforms that turn behavioural signals into trusted, high-performing user experiences.",
+	}
+	mux.HandleFunc("GET /api/resume/templates", auth(listTemplates(settingsCol)))
+	mux.HandleFunc("PUT /api/resume/template", auth(setActiveTemplate(settingsCol)))
+	mux.HandleFunc("GET /api/resume/download", auth(downloadResume(settingsCol, expCol, gotenbergURL, profile)))
 
 	// Chat route (public, rate-limited)
 	if openaiKey != "" {

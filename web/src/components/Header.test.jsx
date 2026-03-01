@@ -33,14 +33,16 @@ describe('Header', () => {
   it('does not show admin-only elements for non-admin users', () => {
     renderWithAuth(<Header currentPage="home" />)
     expect(screen.queryByText('Contact Requests')).not.toBeInTheDocument()
+    expect(screen.queryByText('Resumes')).not.toBeInTheDocument()
     expect(screen.queryByText('Sign Out')).not.toBeInTheDocument()
   })
 
-  it('shows Contact Requests link and Sign Out for admin', () => {
+  it('shows Contact Requests, Resumes link and Sign Out for admin', () => {
     renderWithAuth(<Header currentPage="home" />, {
       authValue: { isAdmin: true, signOut: vi.fn() },
     })
     expect(screen.getByText('Contact Requests')).toBeInTheDocument()
+    expect(screen.getByText('Resumes')).toBeInTheDocument()
     expect(screen.getByText('Sign Out')).toBeInTheDocument()
   })
 

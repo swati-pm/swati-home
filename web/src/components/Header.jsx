@@ -28,6 +28,11 @@ export default function Header({ currentPage }) {
             </a>
           )}
           {isAdmin && (
+            <a href="#/resumes" className={`header-link ${currentPage === 'resumes' ? 'active' : ''}`}>
+              Resumes
+            </a>
+          )}
+          {isAdmin && (
             <button className="header-signout" onClick={signOut}>
               Sign Out
             </button>

@@ -24,13 +24,18 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOTENBERG_URL=http://gotenberg:3000
     depends_on:
       - mongo
+      - gotenberg
 
   mongo:
     image: mongo:7
     volumes:
       - mongo-data:/data/db
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
 
 volumes:
   mongo-data:
