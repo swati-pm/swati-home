@@ -27,6 +27,11 @@ services:
       - ADMIN_EMAIL=test@example.com
       - OPENAI_API_KEY=test-mock-key
       - OPENAI_BASE_URL=http://mock-openai:4010
+      - GOTENBERG_URL=http://gotenberg:3000
     depends_on:
       - mongo
       - mock-openai
+      - gotenberg
+
+  gotenberg:
+    image: gotenberg/gotenberg:8

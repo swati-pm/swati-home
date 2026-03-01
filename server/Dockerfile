@@ -19,5 +19,6 @@ RUN CGO_ENABLED=0 go build -o /server .
 FROM alpine:3.20
 COPY --from=build /server /server
 COPY server/data/ /app/data/
+COPY server/templates/ /app/templates/
 EXPOSE 8080
 CMD ["/server"]

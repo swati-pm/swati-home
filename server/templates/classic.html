@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 20mm 18mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Georgia, "Times New Roman", serif; font-size: 10.5pt; line-height: 1.5; color: #1a1a1a; }
+  .header { text-align: center; margin-bottom: 16pt; border-bottom: 1.5pt solid #333; padding-bottom: 12pt; }
+  .name { font-size: 22pt; font-weight: bold; letter-spacing: 1pt; text-transform: uppercase; margin-bottom: 4pt; }
+  .contact { font-size: 9pt; color: #555; }
+  .summary { font-size: 10pt; color: #333; margin: 14pt 0 18pt; text-align: justify; }
+  .section-title { font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5pt; border-bottom: 0.75pt solid #999; padding-bottom: 3pt; margin: 16pt 0 10pt; color: #333; }
+  .role { margin-bottom: 12pt; }
+  .role-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .company { font-weight: bold; font-size: 10.5pt; }
+  .dates { font-size: 9pt; color: #555; white-space: nowrap; }
+  .title-line { font-style: italic; font-size: 10pt; color: #444; }
+  .location { font-size: 9pt; color: #666; }
+  ul { margin: 4pt 0 0 18pt; }
+  li { font-size: 10pt; margin-bottom: 2pt; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="name">{{.Name}}</div>
+    <div class="contact">{{.Email}}</div>
+  </div>
+
+  <div class="summary">{{.Summary}}</div>
+
+  <div class="section-title">Professional Experience</div>
+
+  {{range .Experiences}}
+  <div class="role">
+    <div class="role-top">
+      <span class="company">{{.Company}}</span>
+      <span class="dates">{{.StartDate}}{{if .EndDate}} – {{.EndDate}}{{end}}</span>
+    </div>
+    <div class="title-line">
+      {{.Role}}{{if .Location}} · {{.Location}}{{end}}
+    </div>
+    {{if .Bullets}}
+    <ul>
+      {{range .Bullets}}<li>{{.}}</li>{{end}}
+    </ul>
+    {{end}}
+  </div>
+  {{end}}
+</body>
+</html>

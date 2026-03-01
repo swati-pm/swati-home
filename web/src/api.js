@@ -108,6 +108,30 @@ export async function deleteContact(id, token) {
   if (!res.ok) throw new Error(res.statusText)
 }
 
+// Resume API
+
+export async function listTemplates(token) {
+  const res = await fetch(`${API}/resume/templates`, {
+    headers: authHeaders(token),
+  })
+  if (!res.ok) throw new Error(res.statusText)
+  return res.json()
+}
+
+export async function setActiveTemplate(template, token) {
+  const res = await fetch(`${API}/resume/template`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ template }),
+  })
+  if (!res.ok) throw new Error(res.statusText)
+  return res.json()
+}
+
+export function getResumeDownloadURL(token) {
+  return `${API}/resume/download`
+}
+
 // Chat API
 
 export async function sendChat(messages) {

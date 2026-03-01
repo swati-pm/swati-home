@@ -12,6 +12,9 @@ import {
   listContacts,
   deleteContact,
   sendChat,
+  listTemplates,
+  setActiveTemplate,
+  getResumeDownloadURL,
 } from './api'
 
 beforeEach(() => {
@@ -176,6 +179,53 @@ describe('api module', () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true })
       await deleteContact('c1', 'tok')
       expect(fetch).toHaveBeenCalledWith('/api/contacts/c1', expect.objectContaining({ method: 'DELETE' }))
+    })
+  })
+
+  // ---------- Resume API ----------
+
+  describe('listTemplates', () => {
+    it('sends GET with auth header', async () => {
+      const data = [{ name: 'classic', active: true }]
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(data),
+      })
+
+      const result = await listTemplates('tok')
+      expect(fetch).toHaveBeenCalledWith('/api/resume/templates', {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer tok',
+        },
+      })
+      expect(result).toEqual(data)
+    })
+  })
+
+  describe('setActiveTemplate', () => {
+    it('sends PUT with template name', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ active_template: 'modern' }),
+      })
+
+      await setActiveTemplate('modern', 'tok')
+      expect(fetch).toHaveBeenCalledWith('/api/resume/template', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer tok',
+        },
+        body: JSON.stringify({ template: 'modern' }),
+      })
+    })
+  })
+
+  describe('getResumeDownloadURL', () => {
+    it('returns the download URL', () => {
+      const url = getResumeDownloadURL('tok')
+      expect(url).toBe('/api/resume/download')
     })
   })
 
