@@ -28,13 +28,22 @@ jobs:
         run: npx vitest run --coverage --coverage.reporter=text --coverage.reporter=json-summary
         working-directory: web
 
-      - name: Upload frontend coverage
+      - name: Frontend coverage summary
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: web/coverage/
-          retention-days: 7
+        run: |
+          echo "## Frontend Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          node -e "
+            const s = require('./coverage/coverage-summary.json').total;
+            const fmt = (m) => m.pct + '%';
+            console.log('| Metric | Coverage |');
+            console.log('|--------|----------|');
+            console.log('| Statements | ' + fmt(s.statements) + ' |');
+            console.log('| Branches | ' + fmt(s.branches) + ' |');
+            console.log('| Functions | ' + fmt(s.functions) + ' |');
+            console.log('| Lines | ' + fmt(s.lines) + ' |');
+          " >> $GITHUB_STEP_SUMMARY
+        working-directory: web
 
   # ── Unit + integration tests: Backend ───────────────
   test-backend:
@@ -59,17 +68,14 @@ jobs:
         env:
           MONGO_URI: mongodb://localhost:27017
 
-      - name: Display backend coverage summary
-        run: go tool cover -func=coverage.out
+      - name: Backend coverage summary
+        run: |
+          echo "## Backend Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
         working-directory: server
-
-      - name: Upload backend coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: server/coverage.out
-          retention-days: 7
 
   # ── E2E tests: Full stack via Docker Compose ────────
   test-e2e:
