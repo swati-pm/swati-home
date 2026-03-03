@@ -236,6 +236,8 @@ test.describe('Edit Experience Flow', () => {
     await expect(page.locator('.modal')).toBeVisible()
 
     const textarea = page.locator('textarea[name="bullets"]')
+    // Wait for React useEffect to populate the textarea with experience data
+    await expect(textarea).not.toHaveValue('')
     const originalBullets = await textarea.inputValue()
 
     await page.locator('.btn-suggest').click()
