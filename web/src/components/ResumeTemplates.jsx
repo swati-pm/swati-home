@@ -8,13 +8,20 @@ export default function ResumeTemplates() {
   const [templates, setTemplates] = useState([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const showError = (msg) => {
+    setError(msg)
+    setTimeout(() => setError(null), 5000)
+  }
 
   const fetchTemplates = async () => {
     try {
       const data = await listTemplates(getToken())
       setTemplates(data)
     } catch (err) {
-      console.error('Failed to load templates:', err)
+      showError('Failed to load templates. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -24,17 +31,20 @@ export default function ResumeTemplates() {
 
   const handleSetActive = async (name) => {
     setUpdating(true)
+    setError(null)
     try {
       await setActiveTemplate(name, getToken())
       await fetchTemplates()
     } catch (err) {
-      console.error('Failed to set template:', err)
+      showError('Failed to update template. Please try again.')
     } finally {
       setUpdating(false)
     }
   }
 
   const handleDownload = async () => {
+    setDownloading(true)
+    setError(null)
     const token = getToken()
     const url = getResumeDownloadURL(token)
     try {
@@ -49,7 +59,9 @@ export default function ResumeTemplates() {
       a.click()
       URL.revokeObjectURL(a.href)
     } catch (err) {
-      console.error('Failed to download resume:', err)
+      showError('Failed to download resume. Please try again.')
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -71,10 +83,16 @@ export default function ResumeTemplates() {
 
   return (
     <section className="rt-section">
+      {error && (
+        <div className="rt-error" role="alert">
+          <span>{error}</span>
+          <button className="rt-error-close" onClick={() => setError(null)}>&times;</button>
+        </div>
+      )}
       <div className="rt-header">
         <h2 className="rt-title">Resume Templates</h2>
-        <button className="rt-download" onClick={handleDownload}>
-          Download PDF
+        <button className="rt-download" onClick={handleDownload} disabled={downloading}>
+          {downloading ? 'Downloading...' : 'Download PDF'}
         </button>
       </div>
       <div className="rt-grid">
