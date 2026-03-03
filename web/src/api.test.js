@@ -15,6 +15,7 @@ import {
   listTemplates,
   setActiveTemplate,
   getResumeDownloadURL,
+  suggestExperienceBullets,
 } from './api'
 
 beforeEach(() => {
@@ -226,6 +227,39 @@ describe('api module', () => {
     it('returns the download URL', () => {
       const url = getResumeDownloadURL('tok')
       expect(url).toBe('/api/resume/download')
+    })
+  })
+
+  // ---------- Suggest API ----------
+
+  describe('suggestExperienceBullets', () => {
+    it('sends POST with experience data and auth header', async () => {
+      const experience = { company: 'ACME', role: 'PM', bullets: ['Led team'] }
+      const response = { bullets: ['Spearheaded team leadership'] }
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(response),
+      })
+
+      const result = await suggestExperienceBullets(experience, 'tok')
+      expect(fetch).toHaveBeenCalledWith('/api/experiences/suggest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer tok',
+        },
+        body: JSON.stringify(experience),
+      })
+      expect(result).toEqual(response)
+    })
+
+    it('throws on failure', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        statusText: 'Service Unavailable',
+      })
+
+      await expect(suggestExperienceBullets({}, 'tok')).rejects.toThrow('Service Unavailable')
     })
   })
 

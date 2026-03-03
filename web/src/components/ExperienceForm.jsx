@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { suggestExperienceBullets } from '../api'
 import './ExperienceForm.css'
 
 const emptyForm = {
@@ -11,7 +13,13 @@ const emptyForm = {
 }
 
 export default function ExperienceForm({ experience, onSave, onCancel }) {
+  const { isAdmin, getToken } = useAuth()
   const [form, setForm] = useState(emptyForm)
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggestions, setSuggestions] = useState(null)
+  const [suggestError, setSuggestError] = useState(null)
+  const [roleDescription, setRoleDescription] = useState('')
+  const [showRoleInput, setShowRoleInput] = useState(false)
 
   useEffect(() => {
     if (experience) {
@@ -48,6 +56,48 @@ export default function ExperienceForm({ experience, onSave, onCancel }) {
         .map(b => b.trim())
         .filter(Boolean),
     })
+  }
+
+  const bulletsArray = form.bullets
+    .split('\n')
+    .map(b => b.trim())
+    .filter(Boolean)
+
+  const canSuggest = isAdmin && experience && bulletsArray.length > 0
+
+  const handleSuggest = async () => {
+    setSuggesting(true)
+    setSuggestError(null)
+    setSuggestions(null)
+    try {
+      const token = getToken()
+      const payload = {
+        company: form.company.trim(),
+        role: form.role.trim(),
+        location: form.location.trim(),
+        start_date: form.startDate.trim(),
+        end_date: form.endDate.trim(),
+        bullets: bulletsArray,
+      }
+      if (roleDescription.trim()) {
+        payload.role_description = roleDescription.trim()
+      }
+      const result = await suggestExperienceBullets(payload, token)
+      setSuggestions(result.bullets)
+    } catch {
+      setSuggestError('Failed to get suggestions. Please try again.')
+    } finally {
+      setSuggesting(false)
+    }
+  }
+
+  const handleAcceptSuggestions = () => {
+    setForm({ ...form, bullets: suggestions.join('\n') })
+    setSuggestions(null)
+  }
+
+  const handleDismissSuggestions = () => {
+    setSuggestions(null)
   }
 
   return (
@@ -126,6 +176,81 @@ export default function ExperienceForm({ experience, onSave, onCancel }) {
               placeholder={"Led cross-functional team of 10...\nDelivered 30% improvement in..."}
             />
           </label>
+
+          {canSuggest && (
+            <div className="suggest-section">
+              {suggestError && (
+                <div className="suggest-error" role="alert">
+                  <span>{suggestError}</span>
+                  <button
+                    type="button"
+                    className="suggest-error-close"
+                    onClick={() => setSuggestError(null)}
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+
+              {!showRoleInput ? (
+                <button
+                  type="button"
+                  className="suggest-role-toggle"
+                  onClick={() => setShowRoleInput(true)}
+                >
+                  + Add role description
+                </button>
+              ) : (
+                <label className="form-label">
+                  Role Description (optional)
+                  <textarea
+                    className="form-textarea"
+                    value={roleDescription}
+                    onChange={e => setRoleDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Paste a job description to tailor suggestions..."
+                  />
+                </label>
+              )}
+
+              <button
+                type="button"
+                className="btn btn-suggest"
+                onClick={handleSuggest}
+                disabled={suggesting}
+              >
+                {suggesting ? 'Getting suggestions...' : 'Suggest Improvements'}
+              </button>
+
+              {suggestions && (
+                <div className="suggest-panel">
+                  <h4 className="suggest-panel-title">Suggested Improvements</h4>
+                  <ul className="suggest-list">
+                    {suggestions.map((bullet, i) => (
+                      <li key={i} className="suggest-item">{bullet}</li>
+                    ))}
+                  </ul>
+                  <div className="suggest-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={handleAcceptSuggestions}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleDismissSuggestions}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={onCancel}>
               Cancel

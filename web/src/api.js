@@ -44,6 +44,16 @@ export async function deleteExperience(id, token) {
   if (!res.ok) throw new Error(res.statusText)
 }
 
+export async function suggestExperienceBullets(experience, token) {
+  const res = await fetch(`${API}/experiences/suggest`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(experience),
+  })
+  if (!res.ok) throw new Error(res.statusText)
+  return res.json()
+}
+
 // Blog API
 
 export async function listBlogs() {

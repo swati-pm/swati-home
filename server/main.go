@@ -368,6 +368,7 @@ func main() {
 	mux.HandleFunc("POST /api/experiences", auth(createExperience(expCol)))
 	mux.HandleFunc("PUT /api/experiences/{id}", auth(updateExperience(expCol)))
 	mux.HandleFunc("DELETE /api/experiences/{id}", auth(deleteExperience(expCol)))
+	mux.HandleFunc("POST /api/experiences/suggest", auth(suggestHandler(openaiKey, openaiBaseURL)))
 
 	// Blog routes (GET is public, mutations require admin)
 	mux.HandleFunc("GET /api/blogs", listBlogs(blogCol))
