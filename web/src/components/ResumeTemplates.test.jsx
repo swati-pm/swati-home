@@ -90,4 +90,73 @@ describe('ResumeTemplates', () => {
       expect(screen.getByText('Download PDF')).toBeInTheDocument()
     })
   })
+
+  it('shows error when loading templates fails', async () => {
+    listTemplates.mockRejectedValue(new Error('Network error'))
+
+    renderWithAuth(<ResumeTemplates />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+    expect(screen.getByText('Failed to load templates. Please try again.')).toBeInTheDocument()
+  })
+
+  it('shows error when setting active template fails', async () => {
+    listTemplates.mockResolvedValue([
+      { name: 'classic', description: 'Traditional', active: true },
+      { name: 'modern', description: 'Modern', active: false },
+    ])
+    setActiveTemplate.mockRejectedValue(new Error('Server error'))
+
+    renderWithAuth(<ResumeTemplates />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Set Active')).toBeInTheDocument()
+    })
+
+    await userEvent.click(screen.getByText('Set Active'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+    expect(screen.getByText('Failed to update template. Please try again.')).toBeInTheDocument()
+  })
+
+  it('shows error when download fails', async () => {
+    listTemplates.mockResolvedValue([
+      { name: 'classic', description: 'Traditional', active: true },
+    ])
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      statusText: 'Bad Gateway',
+    })
+
+    renderWithAuth(<ResumeTemplates />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Download PDF')).toBeInTheDocument()
+    })
+
+    await userEvent.click(screen.getByText('Download PDF'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+    expect(screen.getByText('Failed to download resume. Please try again.')).toBeInTheDocument()
+  })
+
+  it('dismisses error when close button is clicked', async () => {
+    listTemplates.mockRejectedValue(new Error('Network error'))
+
+    renderWithAuth(<ResumeTemplates />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    await userEvent.click(screen.getByText('\u00d7'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })
