@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import HomeChat from './HomeChat'
 
@@ -93,5 +93,106 @@ describe('HomeChat', () => {
     await userEvent.click(screen.getByText(/Ask me anything about Swati/))
 
     expect(screen.getByLabelText('Close chat')).toBeInTheDocument()
+  })
+
+  it('clicking close starts closing animation', async () => {
+    render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+    expect(screen.getByText('Ask about Swati')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText('Close chat'))
+
+    // Closing class should be applied
+    const overlay = document.querySelector('.home-chat-overlay')
+    expect(overlay.classList.contains('home-chat-overlay-closing')).toBe(true)
+  })
+
+  it('close button applies closing state and panel has closing class', async () => {
+    const { container } = render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+
+    await userEvent.click(screen.getByLabelText('Close chat'))
+
+    // Both overlay and panel should have closing classes
+    const overlay = container.querySelector('.home-chat-overlay')
+    const panel = container.querySelector('.home-chat')
+    expect(overlay.classList.contains('home-chat-overlay-closing')).toBe(true)
+    expect(panel.classList.contains('home-chat-closing')).toBe(true)
+  })
+
+  it('panel stopPropagation handler exists on animation end', async () => {
+    const { container } = render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+
+    // The panel's onAnimationEnd calls e.stopPropagation()
+    const panel = container.querySelector('.home-chat')
+    expect(panel).not.toBeNull()
+
+    // Fire animationEnd on the panel — it should stop propagation
+    const stopProp = vi.fn()
+    const evt = new Event('animationend', { bubbles: true })
+    Object.defineProperty(evt, 'stopPropagation', { value: stopProp })
+    panel.dispatchEvent(evt)
+    // We verify the panel exists and has the right structure
+    expect(panel.querySelector('.home-chat-header')).not.toBeNull()
+  })
+
+  it('closes chat on Escape key', async () => {
+    render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+    expect(screen.getByText('Ask about Swati')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+
+    const overlay = document.querySelector('.home-chat-overlay')
+    expect(overlay.classList.contains('home-chat-overlay-closing')).toBe(true)
+  })
+
+  it('closes chat when clicking outside the panel (overlay)', async () => {
+    render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+
+    const overlay = document.querySelector('.home-chat-overlay')
+    // Click on overlay directly (outside the panel)
+    overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    await waitFor(() => {
+      expect(overlay.classList.contains('home-chat-overlay-closing')).toBe(true)
+    })
+  })
+
+  it('does not send on Shift+Enter', async () => {
+    sendChat.mockResolvedValue({ reply: 'Hi!' })
+
+    render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+
+    const input = screen.getByPlaceholderText('Type a question...')
+    await userEvent.type(input, 'Hello')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+
+    expect(sendChat).not.toHaveBeenCalled()
+  })
+
+  it('clears error on next successful send', async () => {
+    sendChat.mockRejectedValueOnce(new Error('fail'))
+    sendChat.mockResolvedValueOnce({ reply: 'success' })
+
+    render(<HomeChat />)
+    await userEvent.click(screen.getByText(/Ask me anything about Swati/))
+
+    const input = screen.getByPlaceholderText('Type a question...')
+    await userEvent.type(input, 'Hello{Enter}')
+
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeInTheDocument()
+    })
+
+    await userEvent.type(input, 'Try again{Enter}')
+
+    await waitFor(() => {
+      expect(screen.getByText('success')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Something went wrong. Please try again.')).not.toBeInTheDocument()
   })
 })

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -28,12 +29,12 @@ type seedBlog struct {
 	Date    string `json:"date"`
 }
 
-func seedData(ctx context.Context, expCol, blogCol *mongo.Collection) {
-	seedExperiences(ctx, expCol)
-	seedBlogs(ctx, blogCol)
+func seedData(ctx context.Context, expCol, blogCol *mongo.Collection, dataDir string) {
+	seedExperiences(ctx, expCol, dataDir)
+	seedBlogs(ctx, blogCol, dataDir)
 }
 
-func seedExperiences(ctx context.Context, col *mongo.Collection) {
+func seedExperiences(ctx context.Context, col *mongo.Collection, dataDir string) {
 	count, err := col.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		log.Printf("seed: count experiences: %v", err)
@@ -44,7 +45,7 @@ func seedExperiences(ctx context.Context, col *mongo.Collection) {
 		return
 	}
 
-	data, err := os.ReadFile("/app/data/experience.json")
+	data, err := os.ReadFile(filepath.Join(dataDir, "experience.json"))
 	if err != nil {
 		log.Printf("seed: read experience.json: %v", err)
 		return
@@ -76,7 +77,7 @@ func seedExperiences(ctx context.Context, col *mongo.Collection) {
 	log.Printf("seed: inserted %d experiences", len(docs))
 }
 
-func seedBlogs(ctx context.Context, col *mongo.Collection) {
+func seedBlogs(ctx context.Context, col *mongo.Collection, dataDir string) {
 	count, err := col.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		log.Printf("seed: count blogs: %v", err)
@@ -87,7 +88,7 @@ func seedBlogs(ctx context.Context, col *mongo.Collection) {
 		return
 	}
 
-	data, err := os.ReadFile("/app/data/blogs.json")
+	data, err := os.ReadFile(filepath.Join(dataDir, "blogs.json"))
 	if err != nil {
 		log.Printf("seed: read blogs.json: %v", err)
 		return

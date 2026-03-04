@@ -159,4 +159,47 @@ describe('ResumeTemplates', () => {
     await userEvent.click(screen.getByText('\u00d7'))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
+
+  it('downloads PDF successfully', async () => {
+    listTemplates.mockResolvedValue([
+      { name: 'classic', description: 'Traditional', active: true },
+    ])
+
+    const fakeBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' })
+    const fakeURL = 'blob:http://localhost/fake-pdf'
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      blob: () => Promise.resolve(fakeBlob),
+    })
+    const createObjURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue(fakeURL)
+    const revokeObjURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+
+    const mockAnchor = { href: '', download: '', click: vi.fn() }
+    const createEl = vi.spyOn(document, 'createElement').mockImplementation((tag) => {
+      if (tag === 'a') return mockAnchor
+      return document.createElement.wrappedMethod
+        ? document.createElement.wrappedMethod.call(document, tag)
+        : Object.getPrototypeOf(document).createElement.call(document, tag)
+    })
+
+    renderWithAuth(<ResumeTemplates />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Download PDF')).toBeInTheDocument()
+    })
+
+    await userEvent.click(screen.getByText('Download PDF'))
+
+    await waitFor(() => {
+      expect(mockAnchor.click).toHaveBeenCalled()
+    })
+    expect(createObjURL).toHaveBeenCalledWith(fakeBlob)
+    expect(mockAnchor.download).toBe('resume.pdf')
+    expect(revokeObjURL).toHaveBeenCalled()
+
+    fetchSpy.mockRestore()
+    createObjURL.mockRestore()
+    revokeObjURL.mockRestore()
+    createEl.mockRestore()
+  })
 })

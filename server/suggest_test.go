@@ -324,3 +324,77 @@ func TestSuggestHandler_InvalidAIResponse(t *testing.T) {
 		t.Errorf("expected 502, got %d", rec.Code)
 	}
 }
+
+func TestSuggestHandler_EmptyChoices(t *testing.T) {
+	mockOpenAI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := openaiResponse{
+			Choices: []struct {
+				Message chatMessage `json:"message"`
+			}{},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer mockOpenAI.Close()
+
+	handler := suggestHandler("test-key", mockOpenAI.URL)
+
+	body := `{"company":"ACME","role":"PM","bullets":["Led team"]}`
+	req := httptest.NewRequest("POST", "/api/experiences/suggest", bytes.NewReader([]byte(body)))
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Errorf("expected 502, got %d", rec.Code)
+	}
+}
+
+func TestSuggestHandler_InvalidJSONFromOpenAI(t *testing.T) {
+	mockOpenAI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{not valid json at all"))
+	}))
+	defer mockOpenAI.Close()
+
+	handler := suggestHandler("test-key", mockOpenAI.URL)
+
+	body := `{"company":"ACME","role":"PM","bullets":["Led team"]}`
+	req := httptest.NewRequest("POST", "/api/experiences/suggest", bytes.NewReader([]byte(body)))
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Errorf("expected 502, got %d", rec.Code)
+	}
+}
+
+func TestSuggestHandler_UnreachableServer(t *testing.T) {
+	handler := suggestHandler("test-key", "http://127.0.0.1:1")
+
+	body := `{"company":"ACME","role":"PM","bullets":["Led team"]}`
+	req := httptest.NewRequest("POST", "/api/experiences/suggest", bytes.NewReader([]byte(body)))
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Errorf("expected 502, got %d", rec.Code)
+	}
+}
+
+func TestBuildSuggestPrompt_NoLocationNoDates(t *testing.T) {
+	req := suggestRequest{
+		Company: "ACME",
+		Role:    "PM",
+		Bullets: []string{"Led team"},
+	}
+
+	messages := buildSuggestPrompt(req)
+	userContent := messages[1].Content
+	if strings.Contains(userContent, "Location") {
+		t.Error("should not include Location when empty")
+	}
+	if strings.Contains(userContent, "Dates") {
+		t.Error("should not include Dates when both empty")
+	}
+}

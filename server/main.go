@@ -330,7 +330,7 @@ func main() {
 	contactCol := db.Collection("contacts")
 	settingsCol := db.Collection("settings")
 
-	seedData(ctx, expCol, blogCol)
+	seedData(ctx, expCol, blogCol, "/app/data")
 
 	// Load data for chat system prompt
 	var systemPrompt string
@@ -389,7 +389,7 @@ func main() {
 	}
 	mux.HandleFunc("GET /api/resume/templates", auth(listTemplates(settingsCol)))
 	mux.HandleFunc("PUT /api/resume/template", auth(setActiveTemplate(settingsCol)))
-	mux.HandleFunc("GET /api/resume/download", auth(downloadResume(settingsCol, expCol, gotenbergURL, profile)))
+	mux.HandleFunc("GET /api/resume/download", auth(downloadResume(settingsCol, expCol, gotenbergURL, "/app/templates", profile)))
 
 	// Chat route (public, rate-limited)
 	if openaiKey != "" {

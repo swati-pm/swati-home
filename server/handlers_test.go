@@ -375,3 +375,63 @@ func TestDeleteContact(t *testing.T) {
 		t.Fatalf("expected 204, got %d", rec.Code)
 	}
 }
+
+// ---------- Invalid JSON decode error path tests ----------
+
+func TestUpdateExperience_InvalidJSON(t *testing.T) {
+	col := getTestCollection(t, "exp_update_bad_json")
+	handler := updateExperience(col)
+
+	req := httptest.NewRequest("PUT", "/api/experiences/some-id", bytes.NewReader([]byte("{not json")))
+	req.SetPathValue("id", "some-id")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestUpdateBlog_InvalidJSON(t *testing.T) {
+	col := getTestCollection(t, "blog_update_bad_json")
+	handler := updateBlog(col)
+
+	req := httptest.NewRequest("PUT", "/api/blogs/some-id", bytes.NewReader([]byte("{not json")))
+	req.SetPathValue("id", "some-id")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestCreateBlog_InvalidJSON(t *testing.T) {
+	col := getTestCollection(t, "blog_create_bad_json")
+	handler := createBlog(col)
+
+	req := httptest.NewRequest("POST", "/api/blogs", bytes.NewReader([]byte("{not json")))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestCreateContact_InvalidJSON(t *testing.T) {
+	col := getTestCollection(t, "contact_create_bad_json")
+	handler := createContact(col)
+
+	req := httptest.NewRequest("POST", "/api/contacts", bytes.NewReader([]byte("{not json")))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}

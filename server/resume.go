@@ -101,7 +101,7 @@ func setActiveTemplate(settingsCol *mongo.Collection) http.HandlerFunc {
 	}
 }
 
-func downloadResume(settingsCol, expCol *mongo.Collection, gotenbergURL string, profile profileData) http.HandlerFunc {
+func downloadResume(settingsCol, expCol *mongo.Collection, gotenbergURL, templateDir string, profile profileData) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Get active template
 		var settings settingsDoc
@@ -125,7 +125,7 @@ func downloadResume(settingsCol, expCol *mongo.Collection, gotenbergURL string, 
 		profile.Experiences = experiences
 
 		// 3. Load and render HTML template
-		tmplPath := filepath.Join("/app/templates", settings.ActiveTemplate+".html")
+		tmplPath := filepath.Join(templateDir, settings.ActiveTemplate+".html")
 		tmplBytes, err := os.ReadFile(tmplPath)
 		if err != nil {
 			log.Printf("resume: failed to read template %s: %v", tmplPath, err)
