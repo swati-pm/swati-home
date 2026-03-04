@@ -330,7 +330,7 @@ func main() {
 	contactCol := db.Collection("contacts")
 	settingsCol := db.Collection("settings")
 
-	seedData(ctx, expCol, blogCol)
+	seedData(ctx, expCol, blogCol, "/app/data")
 
 	// Load data for chat system prompt
 	var systemPrompt string
@@ -368,6 +368,7 @@ func main() {
 	mux.HandleFunc("POST /api/experiences", auth(createExperience(expCol)))
 	mux.HandleFunc("PUT /api/experiences/{id}", auth(updateExperience(expCol)))
 	mux.HandleFunc("DELETE /api/experiences/{id}", auth(deleteExperience(expCol)))
+	mux.HandleFunc("POST /api/experiences/suggest", auth(suggestHandler(openaiKey, openaiBaseURL)))
 
 	// Blog routes (GET is public, mutations require admin)
 	mux.HandleFunc("GET /api/blogs", listBlogs(blogCol))
@@ -388,7 +389,7 @@ func main() {
 	}
 	mux.HandleFunc("GET /api/resume/templates", auth(listTemplates(settingsCol)))
 	mux.HandleFunc("PUT /api/resume/template", auth(setActiveTemplate(settingsCol)))
-	mux.HandleFunc("GET /api/resume/download", auth(downloadResume(settingsCol, expCol, gotenbergURL, profile)))
+	mux.HandleFunc("GET /api/resume/download", auth(downloadResume(settingsCol, expCol, gotenbergURL, "/app/templates", profile)))
 
 	// Chat route (public, rate-limited)
 	if openaiKey != "" {

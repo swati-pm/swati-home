@@ -72,4 +72,110 @@ describe('ContactRequests', () => {
       expect(screen.getByText('2 requests')).toBeInTheDocument()
     })
   })
+
+  it('deletes a contact when user confirms', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    listContacts
+      .mockResolvedValueOnce([
+        { id: 'c1', name: 'John', email: 'j@t.com', subject: 'Hi', message: 'Msg' },
+      ])
+      .mockResolvedValueOnce([])
+    deleteContact.mockResolvedValue({})
+
+    renderWithAuth(<ContactRequests />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('John')).toBeInTheDocument()
+    })
+
+    const user = (await import('@testing-library/user-event')).default
+    await user.click(screen.getByText('Delete'))
+
+    expect(deleteContact).toHaveBeenCalledWith('c1', 'test-token')
+    await waitFor(() => {
+      expect(screen.getByText('No contact requests yet.')).toBeInTheDocument()
+    })
+    window.confirm.mockRestore()
+  })
+
+  it('does not delete when user cancels confirm', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    listContacts.mockResolvedValue([
+      { id: 'c1', name: 'John', email: 'j@t.com', subject: 'Hi', message: 'Msg' },
+    ])
+
+    renderWithAuth(<ContactRequests />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('John')).toBeInTheDocument()
+    })
+
+    const user = (await import('@testing-library/user-event')).default
+    await user.click(screen.getByText('Delete'))
+
+    expect(deleteContact).not.toHaveBeenCalled()
+    window.confirm.mockRestore()
+  })
+
+  it('handles fetch error gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    listContacts.mockRejectedValue(new Error('Network fail'))
+
+    renderWithAuth(<ContactRequests />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to load contacts:', expect.any(Error))
+    })
+    consoleSpy.mockRestore()
+  })
+
+  it('handles delete error gracefully', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    listContacts.mockResolvedValue([
+      { id: 'c1', name: 'John', email: 'j@t.com', subject: 'Hi', message: 'Msg' },
+    ])
+    deleteContact.mockRejectedValue(new Error('Delete failed'))
+
+    renderWithAuth(<ContactRequests />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('John')).toBeInTheDocument()
+    })
+
+    const user = (await import('@testing-library/user-event')).default
+    await user.click(screen.getByText('Delete'))
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to delete contact:', expect.any(Error))
+    })
+    consoleSpy.mockRestore()
+    window.confirm.mockRestore()
+  })
+
+  it('shows contact without phone when phone is empty', async () => {
+    listContacts.mockResolvedValue([
+      { id: 'c1', name: 'Jane', email: 'j@t.com', subject: 'Test', message: 'Msg' },
+    ])
+
+    const { container } = renderWithAuth(<ContactRequests />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Jane')).toBeInTheDocument()
+    })
+    expect(container.querySelector('.cr-card-phone')).toBeNull()
+  })
+
+  it('shows contact without created_at date', async () => {
+    listContacts.mockResolvedValue([
+      { id: 'c1', name: 'Jane', email: 'j@t.com', subject: 'Test', message: 'Msg' },
+    ])
+
+    const { container } = renderWithAuth(<ContactRequests />, { authValue: { isAdmin: true } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Jane')).toBeInTheDocument()
+    })
+    expect(container.querySelector('.cr-card-date')).toBeNull()
+  })
 })

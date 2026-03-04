@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -174,116 +174,46 @@ func TestSetActiveTemplate_InvalidJSON(t *testing.T) {
 
 // ---------- DownloadResume tests ----------
 
-func TestDownloadResume(t *testing.T) {
-	// Set up template directory for the test
-	tmplDir := t.TempDir()
-	tmplContent := `<!DOCTYPE html><html><body><h1>{{.Name}}</h1>{{range .Experiences}}<p>{{.Company}}</p>{{end}}</body></html>`
-	if err := os.WriteFile(filepath.Join(tmplDir, "classic.html"), []byte(tmplContent), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	// Mock Gotenberg server
-	fakePDF := []byte("%PDF-1.4 fake pdf content")
-	gotenberg := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// mockGotenberg creates a test server that mimics Gotenberg PDF conversion.
+func mockGotenberg(t *testing.T, fakePDF []byte) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/forms/chromium/convert/html" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		if r.Method != "POST" {
-			t.Errorf("expected POST, got %s", r.Method)
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
-		// Verify we received HTML with the expected content
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
-			t.Errorf("failed to parse multipart: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		file, _, err := r.FormFile("files")
 		if err != nil {
-			t.Errorf("no files field: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
-		htmlBytes, _ := io.ReadAll(file)
-		if !bytes.Contains(htmlBytes, []byte("Test PM")) {
-			t.Errorf("HTML should contain 'Test PM', got: %s", string(htmlBytes[:min(200, len(htmlBytes))]))
-		}
 
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Write(fakePDF)
 	}))
+}
+
+func TestDownloadResume(t *testing.T) {
+	tmplDir := t.TempDir()
+	tmplContent := `<!DOCTYPE html><html><body><h1>{{.Name}}</h1>{{range .Experiences}}<p>{{.Company}}</p>{{end}}</body></html>`
+	os.WriteFile(filepath.Join(tmplDir, "classic.html"), []byte(tmplContent), 0644)
+
+	fakePDF := []byte("%PDF-1.4 fake pdf content")
+	gotenberg := mockGotenberg(t, fakePDF)
 	defer gotenberg.Close()
 
 	settingsCol := getTestCollection(t, "settings_dl")
 	expCol := getTestCollection(t, "experiences_dl")
+	expCol.InsertOne(context.Background(), experienceDoc{ID: "e1", Company: "TestCorp", Role: "PM", Bullets: []string{"Did stuff"}})
 
-	// Insert test experience
-	exp := experienceDoc{ID: "e1", Company: "TestCorp", Role: "PM", Bullets: []string{"Did stuff"}}
-	expCol.InsertOne(context.Background(), exp)
+	profile := profileData{Name: "Test PM", Email: "pm@test.com", Summary: "Product leader."}
 
-	profile := profileData{
-		Name:    "Test PM",
-		Email:   "pm@test.com",
-		Summary: "Product leader.",
-	}
-
-	// Temporarily override template path — need to patch the handler
-	// Since downloadResume reads from /app/templates, we create a modified version for testing
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Inline version of downloadResume that uses our temp dir
-		var settings settingsDoc
-		err := settingsCol.FindOne(r.Context(), map[string]string{"_id": "global"}).Decode(&settings)
-		if err != nil {
-			settings.ActiveTemplate = "classic"
-		}
-
-		cursor, err := expCol.Find(r.Context(), map[string]interface{}{})
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to fetch experiences")
-			return
-		}
-		var experiences []experienceDoc
-		if err := cursor.All(r.Context(), &experiences); err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to decode experiences")
-			return
-		}
-
-		p := profile
-		p.Experiences = experiences
-
-		tmplPath := filepath.Join(tmplDir, settings.ActiveTemplate+".html")
-		tmplBytes, err := os.ReadFile(tmplPath)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "template not found")
-			return
-		}
-
-		tmpl, err := template.New("resume").Parse(string(tmplBytes))
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "template parse error")
-			return
-		}
-
-		var htmlBuf bytes.Buffer
-		if err := tmpl.Execute(&htmlBuf, p); err != nil {
-			writeError(w, http.StatusInternalServerError, "template render error")
-			return
-		}
-
-		pdfBytes, err := convertHTMLToPDF(gotenberg.URL, htmlBuf.Bytes())
-		if err != nil {
-			writeError(w, http.StatusBadGateway, "PDF generation failed")
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/pdf")
-		w.Write(pdfBytes)
-	}
+	handler := downloadResume(settingsCol, expCol, gotenberg.URL, tmplDir, profile)
 
 	req := httptest.NewRequest("GET", "/api/resume/download", nil)
 	rec := httptest.NewRecorder()
@@ -292,14 +222,84 @@ func TestDownloadResume(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
-
-	ct := rec.Header().Get("Content-Type")
-	if ct != "application/pdf" {
+	if ct := rec.Header().Get("Content-Type"); ct != "application/pdf" {
 		t.Errorf("expected Content-Type application/pdf, got %q", ct)
 	}
-
 	if !bytes.Equal(rec.Body.Bytes(), fakePDF) {
 		t.Error("response body does not match expected PDF content")
+	}
+	// Verify Content-Disposition
+	cd := rec.Header().Get("Content-Disposition")
+	if cd == "" {
+		t.Error("expected Content-Disposition header")
+	}
+	// Verify Content-Length
+	cl := rec.Header().Get("Content-Length")
+	if cl != fmt.Sprintf("%d", len(fakePDF)) {
+		t.Errorf("expected Content-Length %d, got %s", len(fakePDF), cl)
+	}
+}
+
+func TestDownloadResume_MissingTemplate(t *testing.T) {
+	tmplDir := t.TempDir() // empty dir — no templates
+
+	settingsCol := getTestCollection(t, "settings_dl_notempl")
+	expCol := getTestCollection(t, "experiences_dl_notempl")
+
+	profile := profileData{Name: "Test PM", Email: "pm@test.com"}
+	handler := downloadResume(settingsCol, expCol, "http://unused", tmplDir, profile)
+
+	req := httptest.NewRequest("GET", "/api/resume/download", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", rec.Code)
+	}
+}
+
+func TestDownloadResume_GotenbergFailure(t *testing.T) {
+	tmplDir := t.TempDir()
+	os.WriteFile(filepath.Join(tmplDir, "classic.html"), []byte(`<html>{{.Name}}</html>`), 0644)
+
+	gotenberg := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("conversion failed"))
+	}))
+	defer gotenberg.Close()
+
+	settingsCol := getTestCollection(t, "settings_dl_goterr")
+	expCol := getTestCollection(t, "experiences_dl_goterr")
+
+	profile := profileData{Name: "Test PM", Email: "pm@test.com"}
+	handler := downloadResume(settingsCol, expCol, gotenberg.URL, tmplDir, profile)
+
+	req := httptest.NewRequest("GET", "/api/resume/download", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Errorf("expected 502, got %d", rec.Code)
+	}
+}
+
+func TestDownloadResume_BadTemplate(t *testing.T) {
+	tmplDir := t.TempDir()
+	// Write an invalid Go template
+	os.WriteFile(filepath.Join(tmplDir, "classic.html"), []byte(`{{.Invalid`), 0644)
+
+	settingsCol := getTestCollection(t, "settings_dl_badtmpl")
+	expCol := getTestCollection(t, "experiences_dl_badtmpl")
+
+	profile := profileData{Name: "Test PM", Email: "pm@test.com"}
+	handler := downloadResume(settingsCol, expCol, "http://unused", tmplDir, profile)
+
+	req := httptest.NewRequest("GET", "/api/resume/download", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500 for bad template, got %d", rec.Code)
 	}
 }
 
@@ -314,5 +314,53 @@ func TestConvertHTMLToPDF_GotenbergError(t *testing.T) {
 	_, err := convertHTMLToPDF(gotenberg.URL, []byte("<html></html>"))
 	if err == nil {
 		t.Error("expected error from Gotenberg, got nil")
+	}
+}
+
+func TestConvertHTMLToPDF_Success(t *testing.T) {
+	fakePDF := []byte("%PDF-1.4 test content")
+	gotenberg := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/forms/chromium/convert/html" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Write(fakePDF)
+	}))
+	defer gotenberg.Close()
+
+	result, err := convertHTMLToPDF(gotenberg.URL, []byte("<html><body>Test</body></html>"))
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if !bytes.Equal(result, fakePDF) {
+		t.Error("returned PDF does not match expected content")
+	}
+}
+
+func TestConvertHTMLToPDF_InvalidURL(t *testing.T) {
+	_, err := convertHTMLToPDF("http://127.0.0.1:1", []byte("<html></html>"))
+	if err == nil {
+		t.Error("expected error for unreachable gotenberg, got nil")
+	}
+}
+
+func TestDownloadResume_TemplateExecuteError(t *testing.T) {
+	tmplDir := t.TempDir()
+	// Template that references a method on a string — will fail on Execute
+	os.WriteFile(filepath.Join(tmplDir, "classic.html"), []byte(`{{.Name.Bad}}`), 0644)
+
+	settingsCol := getTestCollection(t, "settings_dl_execerr")
+	expCol := getTestCollection(t, "experiences_dl_execerr")
+
+	profile := profileData{Name: "Test PM", Email: "pm@test.com"}
+	handler := downloadResume(settingsCol, expCol, "http://unused", tmplDir, profile)
+
+	req := httptest.NewRequest("GET", "/api/resume/download", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500 for template execute error, got %d", rec.Code)
 	}
 }

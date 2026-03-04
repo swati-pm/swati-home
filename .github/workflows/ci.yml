@@ -24,8 +24,25 @@ jobs:
         run: npm ci
         working-directory: web
 
-      - name: Run Vitest
-        run: npm test
+      - name: Run Vitest with coverage
+        run: npx vitest run --coverage --coverage.reporter=text --coverage.reporter=json-summary
+        working-directory: web
+
+      - name: Frontend coverage summary
+        if: always()
+        run: |
+          echo "## Frontend Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          node -e "
+            const s = require('./coverage/coverage-summary.json').total;
+            const fmt = (m) => m.pct + '%';
+            console.log('| Metric | Coverage |');
+            console.log('|--------|----------|');
+            console.log('| Statements | ' + fmt(s.statements) + ' |');
+            console.log('| Branches | ' + fmt(s.branches) + ' |');
+            console.log('| Functions | ' + fmt(s.functions) + ' |');
+            console.log('| Lines | ' + fmt(s.lines) + ' |');
+          " >> $GITHUB_STEP_SUMMARY
         working-directory: web
 
   # ── Unit + integration tests: Backend ───────────────
@@ -45,11 +62,20 @@ jobs:
           go-version: "1.23"
           cache-dependency-path: server/go.sum
 
-      - name: Run Go tests
-        run: go test -v -count=1 ./...
+      - name: Run Go tests with coverage
+        run: go test -v -count=1 -coverprofile=coverage.out -covermode=atomic ./...
         working-directory: server
         env:
           MONGO_URI: mongodb://localhost:27017
+
+      - name: Backend coverage summary
+        run: |
+          echo "## Backend Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        working-directory: server
 
   # ── E2E tests: Full stack via Docker Compose ────────
   test-e2e:
